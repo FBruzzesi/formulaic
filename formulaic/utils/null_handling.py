@@ -1,6 +1,7 @@
 from functools import singledispatch
 from typing import Any, Sequence, Set, Union
 
+import narwhals.stable.v1 as narwhals
 import numpy
 import pandas
 import scipy.sparse as spsparse
@@ -96,6 +97,11 @@ def _(values: spsparse.spmatrix) -> Set[int]:
     return set(rows[null_data_indices])
 
 
+@find_nulls.register
+def _(values: narwhals.Series) -> Set[int]:
+    return set(values.is_null().arg_true().to_list())
+
+
 @singledispatch
 def drop_rows(values: Any, indices: Sequence[int]) -> Any:
     """
@@ -113,6 +119,14 @@ def drop_rows(values: Any, indices: Sequence[int]) -> Any:
 @drop_rows.register
 def _(values: list, indices: Sequence[int]) -> list:
     return [value for i, value in enumerate(values) if i not in indices]
+
+
+@drop_rows.register
+def _(values: narwhals.Series, indices: Sequence[int]) -> narwhals.Series:
+    # TODO: Is there a better narwhals native way to do this?
+    selector = numpy.zeros(len(values), dtype=bool)
+    selector[list(indices)] = True
+    return values.filter(~selector)
 
 
 @drop_rows.register

@@ -150,7 +150,7 @@ def encode_contrasts(  # pylint: disable=dangerous-default-value  # always repla
         )
 
     if levels is not None:
-        extra_categories = set(pandas.unique(data)).difference(levels)
+        extra_categories = set(data.unique().to_list()).difference(levels)
         if extra_categories:
             warnings.warn(
                 "Data has categories outside of the nominated levels (or that were "
@@ -163,9 +163,9 @@ def encode_contrasts(  # pylint: disable=dangerous-default-value  # always repla
         data = pandas.Series(data).astype("category")
 
     # Perform dummy encoding
-    if output in ("pandas", "numpy"):
-        categories = list(data.cat.categories)
-        encoded = pandas.get_dummies(data)
+    if output in ("pandas", "numpy", "narwhals"):
+        categories = list(data.cat.get_categories())
+        encoded = data.to_dummies()
     elif output == "sparse":
         categories, encoded = categorical_encode_series_to_sparse_csc_matrix(
             data,
